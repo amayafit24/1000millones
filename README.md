@@ -2,30 +2,43 @@
 
 ## LLM Council
 
-Este proyecto usa [llm-council](https://github.com/simonw/llm-council) (v0.1.3), un plugin para [LLM](https://llm.datasette.io/) que permite consultar múltiples modelos de lenguaje en paralelo y sintetizar sus respuestas.
+Consulta múltiples inteligencias artificiales a la vez y compara sus respuestas en paralelo. La gracia es que modelos de distintas empresas tienen distintos sesgos y entrenamientos — si todos coinciden, hay más confianza; si discrepan, ves los matices.
 
-### Instalación
+### Proveedores configurados
 
-```bash
-pip install llm-council
-```
+| Proveedor | Modelo | Empresa | Coste |
+|-----------|--------|---------|-------|
+| `anthropic` | claude-haiku-4.5 | Anthropic (USA) | De pago |
+| `google` | gemini-2.5-flash | Google (USA) | Gratis |
+| `groq` | llama-3.3-70b | Meta vía Groq | Gratis |
+| `deepseek` | deepseek-chat | DeepSeek (China) | Casi gratis |
 
-### Uso básico
-
-```bash
-llm council "¿Cuál es la mejor estrategia para escalar a 1000 millones de usuarios?"
-```
-
-### Providers disponibles
-
-Puedes especificar qué modelos participan en el consejo:
+### Instalación en tu máquina
 
 ```bash
-llm council -p anthropic -p openai "Tu pregunta aquí"
+./setup.sh
 ```
 
-### Modelos instalados
+El script instala todo y te pide las API keys una a una.
 
-- OpenAI (GPT-4o, GPT-4.1, o3, o4-mini, etc.)
-- Anthropic (Claude 3, Claude via llm-anthropic)
-- Google Gemini (via llm-gemini)
+### Uso
+
+```bash
+# Council completo (4 modelos)
+llm council -p anthropic -p google -p groq -p deepseek "Tu pregunta"
+
+# Solo dos proveedores
+llm council -p anthropic -p google "Tu pregunta"
+
+# Con prompt de sistema personalizado
+llm council -p anthropic -p google -s "Eres un experto en marketing" "Tu pregunta"
+```
+
+Navega entre paneles con `TAB`, sal con `Q`.
+
+### API Keys necesarias
+
+- **Anthropic**: https://console.anthropic.com/settings/keys
+- **Gemini**: https://aistudio.google.com/app/apikey (gratis con Google)
+- **Groq**: https://console.groq.com (gratis, sin tarjeta)
+- **DeepSeek**: https://platform.deepseek.com (casi gratis)
