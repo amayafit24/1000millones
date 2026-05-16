@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teresa - WeDo Transformación</title>
+  <style>
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #e5ddd5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    /* ── CHAT WRAPPER ── */
+    .chat-app {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #e5ddd5;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c1b7aa' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      position: relative;
+      box-shadow: 0 0 20px rgba(0,0,0,0.25);
+    }
+
+    /* ── HEADER ── */
+    .chat-header {
+      background: #075E54;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .chat-header .back-arrow {
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .header-info { flex: 1; }
+    .header-info .name {
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .header-info .status {
+      color: #c8f0e6;
+      font-size: 12px;
+    }
+    .header-icons { color: #fff; display: flex; gap: 18px; font-size: 18px; }
+
+    /* ── MESSAGES AREA ── */
+    .messages-area {
+      flex: 1;
+      padding: 16px 12px 80px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* ── DATE CHIP ── */
+    .date-chip {
+      align-self: center;
+      background: rgba(255,255,255,0.85);
+      color: #555;
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* ── BUBBLE ── */
+    .bubble-row { display: flex; margin-bottom: 2px; }
+    .bubble-row.incoming { justify-content: flex-start; }
+    .bubble-row.outgoing { justify-content: flex-end; }
+
+    .bubble {
+      max-width: 80%;
+      padding: 8px 10px 4px;
+      border-radius: 8px;
+      font-size: 14.5px;
+      line-height: 1.45;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+    }
+    .bubble.incoming {
+      background: #fff;
+      border-top-left-radius: 2px;
+    }
+    .bubble.outgoing {
+      background: #dcf8c6;
+      border-top-right-radius: 2px;
+    }
+    .bubble .time {
+      font-size: 10.5px;
+      color: #aaa;
+      text-align: right;
+      margin-top: 2px;
+      display: block;
+    }
+    .bubble .tick { color: #4fc3f7; }
+
+    /* ── TYPING INDICATOR ── */
+    .typing-row { display: flex; align-items: flex-end; gap: 8px; }
+    .typing-bubble {
+      background: #fff;
+      border-radius: 18px;
+      border-top-left-radius: 4px;
+      padding: 10px 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .typing-dot {
+      width: 7px; height: 7px;
+      background: #aaa;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* ── FADE-IN ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(6px);
+      animation: fadeUp 0.35s ease forwards;
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── QUICK REPLIES ── */
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 12px;
+      justify-content: center;
+    }
+    .qr-btn {
+      background: #fff;
+      border: 1.5px solid #25D366;
+      color: #075E54;
+      border-radius: 22px;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, transform 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .qr-btn:hover { background: #25D366; color: #fff; transform: translateY(-1px); }
+    .qr-btn:active { transform: scale(0.97); }
+    .qr-btn.selected { background: #25D366; color: #fff; }
+
+    /* ── PRICE CARDS ── */
+    .price-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    .price-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-left: 4px solid #25D366;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .price-card .pack-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: #1a1a1a;
+    }
+    .price-card .pack-desc {
+      font-size: 12px;
+      color: #777;
+      margin-top: 2px;
+    }
+    .price-card .pack-price {
+      font-size: 20px;
+      font-weight: 800;
+      color: #075E54;
+      white-space: nowrap;
+    }
+
+    /* ── CTA BUTTON ── */
+    .cta-area {
+      padding: 10px 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+    .cta-btn {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: #fff;
+      border: none;
+      border-radius: 28px;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(37,211,102,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,211,102,0.45); }
+    .cta-btn:active { transform: scale(0.98); }
+    .cta-btn svg { width: 22px; height: 22px; fill: #fff; flex-shrink: 0; }
+
+    /* ── HIDDEN ── */
+    .hidden { display: none !important; }
+
+    /* ── EMOJI ── */
+    .emoji { font-style: normal; }
+  </style>
+</head>
+<body>
+<div class="chat-app">
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <span class="back-arrow">&#8592;</span>
+    <div class="avatar">🌟</div>
+    <div class="header-info">
+      <div class="name">Teresa · WeDo Transformación</div>
+      <div class="status">en línea</div>
+    </div>
+    <div class="header-icons">
+      <span>&#9990;</span>
+      <span>&#8942;</span>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages-area" id="messages">
+    <div class="date-chip">Hoy</div>
+  </div>
+
+  <!-- QUICK REPLIES (país) -->
+  <div class="quick-replies hidden" id="step-pais">
+    <button class="qr-btn" onclick="selectPais('es')">🇪🇸 España</button>
+    <button class="qr-btn" onclick="selectPais('ec')">🇪🇨 Ecuador</button>
+  </div>
+
+  <!-- PRECIOS ESPAÑA -->
+  <div class="price-section hidden" id="precios-es">
+    <div class="price-card fade-in">
+      <div>
+        <div class="pack-name">🔥 Pack Reto 21 Días</div>
+        <div class="pack-desc">Inicio transformación · envío incluido</div>
+      </div>
+      <div class="pack-price">135€</div>
+    </div>
+    <div class="price-card fade-in" style="animation-delay:0.1s">
+      <div>
+        <div class="pack-name">⚡ Pack Transformación 30 días</div>
+        <div class="pack-desc">Resultado visible garantizado</div>
+      </div>
+      <div class="pack-price">195€</div>
+    </div>
+    <div class="price-card fade-in" style="animation-delay:0.2s">
+      <div>
+        <div class="pack-name">💎 Pack Plus Bienestar 2 meses</div>
+        <div class="pack-desc">La opción más completa</div>
+      </div>
+      <div class="pack-price">370€</div>
+    </div>
+  </div>
+
+  <!-- PRECIOS ECUADOR -->
+  <div class="price-section hidden" id="precios-ec">
+    <div class="price-card fade-in">
+      <div>
+        <div class="pack-name">🔥 Pack Reto 21 Días</div>
+        <div class="pack-desc">Inicio transformación · envío incluido</div>
+      </div>
+      <div class="pack-price">$105</div>
+    </div>
+    <div class="price-card fade-in" style="animation-delay:0.1s">
+      <div>
+        <div class="pack-name">⚡ Pack Transformación 30 días</div>
+        <div class="pack-desc">Resultado visible garantizado</div>
+      </div>
+      <div class="pack-price">$152</div>
+    </div>
+    <div class="price-card fade-in" style="animation-delay:0.2s">
+      <div>
+        <div class="pack-name">💎 Pack Plus Bienestar 2 meses</div>
+        <div class="pack-desc">La opción más completa</div>
+      </div>
+      <div class="pack-price">$290</div>
+    </div>
+  </div>
+
+  <!-- CTA FINAL -->
+  <div class="cta-area hidden" id="cta-area">
+    <a id="cta-link" class="cta-btn" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      Escribir a Teresa ahora
+    </a>
+  </div>
+
+</div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // CONFIGURA AQUÍ EL WHATSAPP DE TERESA
+  // Formato: código país + número sin espacios ni +
+  // Ejemplo España: 34612345678
+  // Ejemplo Ecuador: 593987654321
+  const TERESA_WHATSAPP = "34600000000"; // ← CAMBIA ESTE NÚMERO
+
+  const MENSAJE_ES = "Hola Teresa! 👋 Vi tus precios para España y me interesa comenzar mi transformación. ¿Me puedes dar más info?";
+  const MENSAJE_EC = "Hola Teresa! 👋 Vi tus precios para Ecuador y me interesa comenzar mi transformación. ¿Me puedes dar más info?";
+  // ─────────────────────────────────────────────
+
+  const messagesEl = document.getElementById("messages");
+  let messageQueue = [];
+  let isRunning = false;
+
+  function getNow() {
+    const d = new Date();
+    return d.getHours() + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function addBubble(text, delay) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        // typing indicator
+        const typingRow = document.createElement("div");
+        typingRow.className = "bubble-row incoming typing-row";
+        typingRow.id = "typing-tmp";
+        typingRow.innerHTML = `<div class="typing-bubble">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>`;
+        messagesEl.appendChild(typingRow);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        setTimeout(() => {
+          const t = document.getElementById("typing-tmp");
+          if (t) t.remove();
+
+          const row = document.createElement("div");
+          row.className = "bubble-row incoming fade-in";
+          row.innerHTML = `<div class="bubble incoming">${text}<span class="time">${getNow()}</span></div>`;
+          messagesEl.appendChild(row);
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+          resolve();
+        }, 1200);
+      }, delay);
+    });
+  }
+
+  async function runFlow() {
+    // MENSAJE 1
+    await addBubble("¡Hola! 👋 Soy <strong>Teresa</strong>, coach de transformación WeDo.<br>Llevo años ayudando a mujeres a recuperar su energía y su mejor versión. 💪", 400);
+
+    // MENSAJE 2
+    await addBubble("Aquí te cuento cómo funciona nuestro programa y cuánto cuesta. 🌟<br><br>¿Para qué país necesitas los precios?", 800);
+
+    // BOTONES PAÍS
+    setTimeout(() => {
+      document.getElementById("step-pais").classList.remove("hidden");
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }, 200);
+  }
+
+  function selectPais(pais) {
+    // Marcar botón seleccionado
+    document.querySelectorAll("#step-pais .qr-btn").forEach(b => b.disabled = true);
+    document.getElementById("step-pais").classList.add("hidden");
+
+    // Bubble de respuesta del usuario
+    const row = document.createElement("div");
+    row.className = "bubble-row outgoing fade-in";
+    row.innerHTML = `<div class="bubble outgoing">${pais === "es" ? "🇪🇸 España" : "🇪🇨 Ecuador"}<span class="time">${getNow()} <span class="tick">✓✓</span></span></div>`;
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    if (pais === "es") showPreciosEspana();
+    else showPreciosEcuador();
+  }
+
+  async function showPreciosEspana() {
+    await addBubble("¡Perfecto! 🇪🇸 Aquí tienes los <strong>precios venta al público para España</strong>:", 600);
+
+    const sec = document.getElementById("precios-es");
+    sec.classList.remove("hidden");
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    await addBubble("Incluyen todos los productos del pack, seguimiento personalizado conmigo y acceso al grupo de apoyo. 🙌<br><br>¿Te gustaría empezar?", 1400);
+
+    const link = document.getElementById("cta-link");
+    link.href = `https://api.whatsapp.com/send?phone=${TERESA_WHATSAPP}&text=${encodeURIComponent(MENSAJE_ES)}`;
+    document.getElementById("cta-area").classList.remove("hidden");
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function showPreciosEcuador() {
+    await addBubble("¡Perfecto! 🇪🇨 Aquí tienes los <strong>precios venta al público para Ecuador</strong>:", 600);
+
+    const sec = document.getElementById("precios-ec");
+    sec.classList.remove("hidden");
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    await addBubble("Incluyen todos los productos del pack, seguimiento personalizado conmigo y acceso al grupo de apoyo. 🙌<br><br>¿Te gustaría empezar?", 1400);
+
+    const link = document.getElementById("cta-link");
+    link.href = `https://api.whatsapp.com/send?phone=${TERESA_WHATSAPP}&text=${encodeURIComponent(MENSAJE_EC)}`;
+    document.getElementById("cta-area").classList.remove("hidden");
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Arrancar
+  runFlow();
+</script>
+</body>
+</html>
